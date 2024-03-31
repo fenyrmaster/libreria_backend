@@ -1,0 +1,35 @@
+{
+  "name": "backend-libreria",
+  "version": "1.0.0",
+  "description": "La API para la libreria",
+  "main": "index.js",
+  "scripts": {
+    "start": "node .",
+    "dev": "nodemon --env-file=config.env .",
+    "quickSQL": "node ./quickSQL.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.0.3",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.2.0",
+    "html-to-text": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.13",
+    "nodemailer-sendgrid": "^1.0.3",
+    "pg": "^8.11.3",
+    "pug": "^3.0.2",
+    "sharp": "^0.33.3",
+    "uuid": "^9.0.1",
+    "validator": "^13.11.0",
+    "xss-clean": "^0.1.4"
+  }
+}

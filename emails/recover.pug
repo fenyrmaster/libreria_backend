@@ -1,0 +1,21 @@
+extends baseEmail
+
+block content
+    p Hola #{firstName},
+    p Olvidaste tu contraseña? haz click en el boton para restablecer tu contraseña.
+    p Si por alguna razon no ocupas restablecer tu contraseña, ignora este correo
+    table.btn.btn-primary(role='presentation', border='0', cellpadding='0', cellspacing='0')
+        tbody
+            tr
+             td(align='left')
+                table(role='presentation', border='0', cellpadding='0', cellspacing='0')
+                    tbody
+                        tr
+                            td
+                                a(href=`${url}`, target='_blank') Restablecer mi contraseña!
+    p Si necesitas ayuda con algo mas, contactate con nosotros por estos medios:
+    p 33 1281 6322
+    p Correo: mia07joyeria@gmail.com
+    p Republica No. 20 LOCAL 7
+    p Centro Joyero Republica 
+    p Col. SAN JUAN DE DIOS C.P. 44360
