@@ -52,8 +52,12 @@ module.exports = class Email {
         this.send("welcome", "Bienvenido a nuestra libreria", confirm);
     }
 
-    async sendPasswordReset() {
-        await this.send("recover", "Recupera tu contraseña (Valido por 10 minutos")
+    async sendMailChange(confirm){
+        this.send("mailChange", "Cambia tu correo electronico", confirm);
+    }
+
+    async sendPasswordReset(confirm) {
+        await this.send("recover", "Recupera tu contraseña (Valido por 10 minutos)", confirm)
     }
 
     async sendOXXO(){

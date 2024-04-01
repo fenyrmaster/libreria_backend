@@ -5,6 +5,7 @@ const db = require("../db");
 
 exports.changeUserData = catchAsync(async (req,res,next) => {
     const { id } = req.params;
+    console.log(req.body);
     const { nombre, telefono, domicilio, localidad } = req.body
     const updatedUser = await db.query(`UPDATE Usuarios SET nombre = $1, domicilio = $2, localidad = $3, telefono = $4 WHERE id = $5 RETURNING nombre, localidad, telefono, correo_electronico, domicilio, rol, id, image`, [nombre, domicilio, localidad, telefono, id]);
     res.status(200).json({

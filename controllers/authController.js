@@ -23,7 +23,6 @@ const confirmUser = async correo_electronico => {
     const token = await crypto.randomBytes(32).toString("hex");
     const confirmStringUser = crypto.createHash("sha256").update(token).digest("hex");
     const confirmStringExpirationUser = Date.now() + 30*24*60*60*1000;
-    console.log(confirmStringExpirationUser);
     await db.query(`UPDATE Usuarios SET confirmString = $1, confirmStringExpiration = $2 WHERE correo_electronico = $3`, [confirmStringUser, confirmStringExpirationUser, correo_electronico]);
     return token;
 }
@@ -85,14 +84,14 @@ exports.signup = catchAsync(async (req,res,next) => {
         message: "Confirma tu cuenta, te enviamos un correo",
         data: {
             user: {
-                nombre: user.rows[0].nombre,
-                correo_electronico: user.rows[0].correo_electronico,
-                id: user.rows[0].id,
-                localidad: user.rows[0].localidad,
-                rol: user.rows[0].rol,
-                domicilio: user.rows[0].domicilio,
-                telefono: user.rows[0].telefono,
-                image: freshUser.rows[0].image
+                nombre: newUser.rows[0].nombre,
+                correo_electronico: newUser.rows[0].correo_electronico,
+                id: newUser.rows[0].id,
+                localidad: newUser.rows[0].localidad,
+                rol: newUser.rows[0].rol,
+                domicilio: newUser.rows[0].domicilio,
+                telefono: newUser.rows[0].telefono,
+                image: newUser.rows[0].image
             }
         }
     })
@@ -229,13 +228,15 @@ exports.restrict = (...roles) => {
     }
 }
 exports.forgotPass = catchAsync(async(req,res,next) => {
-    const user = await User.findOne({email: req.body.email});
-    if(!user){
+    const user = await db.query(`SELECT id, correo_electronico, nombre FROM Usuarios WHERE correo_electronico = $1`, [req.body.correo_electronico]);
+    if(user.rows.length < 1){
         return next(new ApiErrors("No hay ningun usuario con ese correo", 404));
     }
-    const resetToken = user.createPassResetToken();
-    await user.save({validateBeforeSave: false});
+    const token = await crypto.randomBytes(32).toString("hex");
+    const changePass = crypto.createHash("sha256").update(token).digest("hex");
+    const passwordResetExpires = Date.now() + 10*60*1000;
 
+    await db.query(`UPDATE Usuarios SET passwordResetToken = $1, passwordResetExpires = $2 WHERE id = $3`, [changePass, passwordResetExpires, user.rows[0].id]);
 
     try{
 //    await sendEmail({
@@ -243,35 +244,35 @@ exports.forgotPass = catchAsync(async(req,res,next) => {
 //        subject: "your password reset token (valid for 10 min)",
 //        message
 //    });
-        const resetURL = `${process.env.URL_FRONT}/recuperar/${resetToken}`;
+        const resetURL = `${process.env.URL_FRONT}/recuperar/${token}`;
 
-        await new Email(user, resetURL).sendPasswordReset();
+        await new Email(user.rows[0]).sendPasswordReset(resetURL);
         res.status(200).json({
             status: "success",
             message: "Token sent to email succesfully"
         });
     } catch(err) {
-        user.passwordResetToken = undefined;
-        user.passwordResetExpires = undefined;
-        await user.save({validateBeforeSave: false});
-
+        await db.query(`UPDATE Usuarios SET passwordResetToken = NULL, passwordResetExpires = NULL WHERE id = $3`, [user.rows[0].id]);
         return next(new ApiErrors("Hubo un error al intentar enviar el correo, intenta de nuevo"), 500);
     }
 });
 exports.resetPass = catchAsync(async(req,res,next) => {
     //usar template strings con el process.env
+    console.log(req.body)
     const hashedToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
-    const user = await User.findOne({passwordResetToken: hashedToken, passwordResetExpires: {$gt: Date.now()}});
-    if(!user){
+    const user = await db.query(`SELECT passwordResetToken, id FROM Usuarios WHERE passwordResetToken = $1`, [hashedToken])
+    if(user.rows.length < 1){
         return next(new ApiErrors("Error! vuelva a intentar recuperar su cuenta", 400));
     }
-    user.password = req.body.password;
-    user.confirmarPassword = req.body.confirmarPassword;
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
-    await user.save();
-    
-    createSendToken(user,201,req,res);
+    if(req.body.contrasena != req.body.repetir_contrasena){
+        return next(new ApiErrors("Las contraseñas no coinciden", 400));
+    }
+    let hashedPasswd = await bcrypt.hash(req.body.contrasena, 12);
+    db.query(`UPDATE Usuarios SET passwordResetToken = NULL, contrasena = $1, passwordResetExpires = NULL WHERE id = $2`, [hashedPasswd, user.rows[0].id]);
+    res.status(200).json({
+        status: "success",
+        message: "Contraseña reestablecida con exito, inicia sesion",
+    })
 });
 
 exports.updatePassword = catchAsync(async(req,res,next) => {
@@ -284,7 +285,7 @@ exports.updatePassword = catchAsync(async(req,res,next) => {
     }
     let hashedPasswd = await bcrypt.hash(req.body.new_contrasena, 12);
     await db.query(`UPDATE Usuarios SET contrasena = $1 WHERE id = $2`, [hashedPasswd, req.params.id]);
-    res.status(201).json({
+    res.status(200).json({
         status: "success",
         message: "Contraseña cambiada con exito",
     })
@@ -323,3 +324,45 @@ exports.remindUser = catchAsync(async (req,res,next) => {
         }    
     })
 });
+
+exports.requestEmailChange = catchAsync(async (req,res,next) => {
+    const token = await crypto.randomBytes(32).toString("hex");
+    const changeEmail = crypto.createHash("sha256").update(token).digest("hex");
+    const respuesta = await db.query(`UPDATE Usuarios SET emailChangeString = $1 WHERE id = $2 RETURNING nombre`, [changeEmail, req.params.id]);
+    const confirmUrl = `${process.env.URL_FRONT}/correoCambiado/${token}?mail=${req.body.correo_electronico}`;
+    const user = {
+        nombre: respuesta.rows[0].nombre,
+        correo_electronico: req.body.correo_electronico 
+    }
+    await new Email(user).sendMailChange(confirmUrl);
+    res.status(201).json({
+        status: "success",
+        message: "Revisa el correo electronico que pusiste"
+    })
+})
+
+exports.mailChangeConfirm = catchAsync(async (req,res,next) => {
+    console.log(req.body);
+    const hashedToken = crypto.createHash("sha256").update(req.body.emailChangeString).digest("hex");
+    const checkUser = await db.query(`SELECT emailChangeString, id FROM Usuarios WHERE emailChangeString = $1`, [hashedToken]);
+    if(checkUser.rows.length < 1){
+        return next(new ApiErrors("El usuario con la solicitud no existe", 400));
+    }
+    const newUserMail = await db.query(`UPDATE Usuarios SET correo_electronico = $1, emailChangeString = NULL WHERE id = $2 RETURNING nombre, localidad, telefono, correo_electronico, domicilio, rol, id, image`, [req.body.correo_electronico, checkUser.rows[0].id]);
+    res.status(201).json({
+        status: "success",
+        message: "Correo de tu cuenta cambiado con exito",
+        data: {
+            user: {
+                nombre: newUserMail.rows[0].nombre,
+                correo_electronico: newUserMail.rows[0].correo_electronico,
+                id: newUserMail.rows[0].id,
+                localidad: newUserMail.rows[0].localidad,
+                rol: newUserMail.rows[0].rol,
+                domicilio: newUserMail.rows[0].domicilio,
+                telefono: newUserMail.rows[0].telefono,
+                image: newUserMail.rows[0].image
+            }
+        }
+    })
+})

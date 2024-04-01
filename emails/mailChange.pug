@@ -2,8 +2,7 @@ extends baseEmail
 
 block content
     p Hola #{firstName},
-    p Olvidaste tu contraseña? haz click en el boton para restablecer tu contraseña.
-    p Si por alguna razon no ocupas restablecer tu contraseña, ignora este correo
+    p Has recibido este correo para cambiar tu correo electronico, da click en el siguiente boton para cambiarlo al que estas usando en este momento
     table.btn.btn-primary(role='presentation', border='0', cellpadding='0', cellspacing='0')
         tbody
             tr
@@ -12,5 +11,5 @@ block content
                     tbody
                         tr
                             td
-                                a(href=`${confirm}`, target='_blank') Restablecer mi contraseña!
-    p Si necesitas ayuda con algo mas, contactate con nosotros.
+                                a(href=`${confirm}`, target='_blank') Confirmar nuevo correo!
+    p Si necesitas ayuda con tu cuenta, contactate con nosotros

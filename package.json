@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node .",
     "dev": "nodemon --env-file=config.env .",
-    "quickSQL": "node ./quickSQL.js"
+    "quickSQL": "node --env-file=config.env ./quickSQL.js"
   },
   "author": "",
   "license": "ISC",

@@ -12,6 +12,9 @@ const createUserTable = `
         confirmString text,
         confirmStringExpiration text,
         confirmado BOOLEAN NOT NULL DEFAULT FALSE,
+        emailChangeString text DEFAULT NULL,
+        passwordResetToken text DEFAULT NULL,
+        passwordResetExpires text DEFAULT NULL,
         active BOOLEAN NOT NULL DEFAULT TRUE
     )
 `;

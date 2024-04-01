@@ -9,7 +9,11 @@ userRouter.route("/log-in").post(authController.login);
 userRouter.route("/logout").get(authController.logout);
 userRouter.route("/remind").get(authController.remindUser);
 userRouter.route("/confirm/:token").get(authController.confirmIdentity);
-userRouter.route("/changeData/:id").post(authController.protect, userController.changeUserData);
-userRouter.route("/changePassword/:id").post(authController.protect, authController.updatePassword);
+userRouter.route("/changeData/:id").patch(authController.protect, userController.changeUserData);
+userRouter.route("/changePassword/:id").patch(authController.protect, authController.updatePassword);
+userRouter.route("/changeEmail/:id").patch(authController.protect, authController.requestEmailChange);
+userRouter.route("/confirmChangeMail").patch(authController.mailChangeConfirm);
+userRouter.route("/forgotPassword").patch(authController.forgotPass);
+userRouter.route("/resetPassword/:token").patch(authController.resetPass)
 
 module.exports = userRouter;
