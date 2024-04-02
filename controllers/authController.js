@@ -366,3 +366,11 @@ exports.mailChangeConfirm = catchAsync(async (req,res,next) => {
         }
     })
 })
+
+exports.toggleUserActivity = catchAsync(async (req,res,next) => {
+    await db.query(`UPDATE Usuarios SET active = ${req.body.active == "true" ? "FALSE" : "TRUE"} WHERE id = $1`, [req.params.id]);
+    res.status(200).json({
+        status: "success",
+        message: `Estado de usuario cambiado a ${req.body.active == "true" ? "desactivado" : "activado" }`,
+    })
+})
