@@ -12,6 +12,7 @@ const db = require("./db");
 
 // Rutas para la base de datos
 const userRouter = require("./routes/userRouter");
+const etiquetasRouter = require("./routes/etiquetasRouter");
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use(xss());
 app.use(compression());
 
 app.use("/api/usuarios", userRouter);
+app.use("/api/etiquetas", etiquetasRouter);
 
 app.all("*", (req,res,next) => {
   const err = new ApiErrors(`the given URL (${req.originalUrl}) is not valid`, 404);
