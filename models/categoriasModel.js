@@ -28,6 +28,7 @@ END $$;
 
 const auditoriaEtiquetas = `
     CREATE TABLE IF NOT EXISTS AuditoriaEtiquetas(
+        id UUID DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
         id_administrador UUID,
         accion actionType NOT NULL,
         nombre_etiqueta text,
@@ -73,8 +74,9 @@ const triggerDelete = `
     BEGIN
         SELECT nombre, id INTO nombre_etiqueta_select, id_etiqueta FROM tempEtiquetas;
         INSERT INTO AuditoriaEtiquetas(id_administrador, accion, nombre_etiqueta) VALUES(id_etiqueta, 'Delete', nombre_etiqueta_select);
+        DELETE FROM BooksTags WHERE id_tag = OLD.id;
         RAISE NOTICE 'Operación borrar realizada en etiquetas';
-        RETURN NEW;
+        RETURN OLD;
     END;
     $$ LANGUAGE plpgsql;
 `;
@@ -91,7 +93,7 @@ const triggerDeleteOptions = `
     CREATE OR REPLACE TRIGGER triggerDelete
     BEFORE DELETE
     ON Etiquetas
-    FOR EACH STATEMENT
+    FOR EACH ROW
     EXECUTE FUNCTION deleteEtiquetas();
 `;
 

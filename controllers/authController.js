@@ -104,7 +104,7 @@ exports.confirmIdentity = catchAsync(async (req,res,next) => {
         return next(new ApiErrors("El token no es valido", 404));
     }
     if(user.rows[0].confirmStringExpiration < Date.now()){
-        await db.query(`DELETE FROM User WHERE id = $1`, [user.rows[0].id]);
+        await db.query(`DELETE FROM Usuarios WHERE id = $1`, [user.rows[0].id]);
         return next(new ApiErrors("Has tardado mucho, crea una nueva cuenta", 410));
     }
     console.log(user);

@@ -47,7 +47,7 @@ exports.deleteEtiquetas = catchAsync(async (req, res, next) => {
     if(preDeleteTag.rowCount < 1){
         return next(new ApiErrors("La etiqueta no existe", 400));
     }
-    const wtf = await db.query(`INSERT INTO tempEtiquetas (id, nombre) VALUES ($1, $2) RETURNING id, nombre`, [req.user.id, preDeleteTag.rows[0].nombre]);
+    await db.query(`INSERT INTO tempEtiquetas (id, nombre) VALUES ($1, $2) RETURNING id, nombre`, [req.user.id, preDeleteTag.rows[0].nombre]);
     await db.query(`DELETE FROM Etiquetas WHERE id = $1`, [id]);
     await db.query(`DELETE FROM tempEtiquetas`);
     res.status(200).json({

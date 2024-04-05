@@ -1,6 +1,8 @@
 const db = require("../db");
 const { createUserTable, rolesType, fix, uuidextension } = require("../models/userModel");
 const { categoriaType, accionType, auditoriaEtiquetas, createCategoriasModel, triggerUpdateInsertOptions, triggerUpdateInsert, tempTableEtiquetas, triggerDeleteOptions, triggerDelete } = require("../models/categoriasModel");
+const { createBooksModel, tempTableBooks, auditoriaLibros, booksTagsModel, bookTriggerDelete, bookTriggerUpdateInsert, bookTriggerDeleteOptions, bookTriggerUpdateInsertOptions } = require("../models/librosModel");
+
 
 const runMigrations = async () => {
     console.log("BEGIN DB MIGRATION");
@@ -16,11 +18,21 @@ const runMigrations = async () => {
         await client.query(categoriaType);
         await client.query(createCategoriasModel);
         await client.query(auditoriaEtiquetas);
-        await client.query(triggerUpdateInsert);
-        await client.query(triggerUpdateInsertOptions);
         await client.query(tempTableEtiquetas);
+        await client.query(createBooksModel);
+        await client.query(tempTableBooks);
+        await client.query(auditoriaLibros);
+        await client.query(booksTagsModel);
+        
+        // Triggers
         await client.query(triggerDelete);
         await client.query(triggerDeleteOptions);
+        await client.query(triggerUpdateInsert);
+        await client.query(triggerUpdateInsertOptions);
+        await client.query(bookTriggerDelete);
+        await client.query(bookTriggerUpdateInsert);
+        await client.query(bookTriggerDeleteOptions);
+        await client.query(bookTriggerUpdateInsertOptions);
         await client.query("COMMIT");
 
         console.log("END DB MIGRATION");
