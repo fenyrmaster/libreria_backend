@@ -64,6 +64,10 @@ module.exports = class Email {
         await this.send("pedidoOXXO", "Tu pedido ha sido registrado")
     }
 
+    async sendReservaConfirmed(bookName){
+        await this.send("reservaConfirmed", "Has reservado un libro", bookName);
+    }
+
     async sendTarjeta(){
         await this.send("pedidoTarjeta", "Tu pedido ha sido registrado")
     }

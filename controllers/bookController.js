@@ -84,7 +84,9 @@ exports.insertBook = catchAsync(async (req, res, next) => {
     if(titulo == "" || sinopsis == "" || stock <= -1 || edicion == "" || editorial == "" || autores == "" || fecha_publicacion == "" || paginas <= -1 || !imageURL){
         return next(new ApiErrors("Todos los campos son obligatorios y los valores numericos no pueden ser negativos", 400));
     }
+    await db.query(`INSERT INTO tempBooks (user_rol) VALUES ($1)`, [req.user.rol]);
     const bookID = await db.query(`INSERT INTO Books (titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, image, id_administrador, editorial) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`, [titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, imageURL, req.user.id, editorial]);
+    await db.query(`DELETE FROM tempBooks`);
     let parsedEtiquetas = etiquetas.split(",");
     parsedEtiquetas.forEach(etiquetaID => {
         addBookTagRef(bookID.rows[0].id, etiquetaID);
@@ -146,7 +148,9 @@ exports.updateBooks = catchAsync(async (req, res, next) => {
     } else {
         respuesta = await db.query(`UPDATE Books SET titulo = $1, sinopsis = $2, stock = $3, edicion = $4, autores = $5, fecha_publicacion = $6, paginas = $7, id_administrador = $8, editorial = $9 WHERE id = $10 RETURNING id`, [titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, req.user.id, editorial, id])
     }
+    await db.query(`INSERT INTO tempBooks (user_rol) VALUES ($1)`, [req.user.rol]);
     await db.query(`DELETE FROM BooksTags WHERE id_book = $1`, [respuesta.rows[0].id]);
+    await db.query(`DELETE FROM tempBooks`);
     let parsedEtiquetas = etiquetas.split(",");
     parsedEtiquetas.forEach(etiquetaID => {
         addBookTagRef(respuesta.rows[0].id, etiquetaID);
@@ -165,8 +169,7 @@ exports.deleteBooks = catchAsync(async (req, res, next) => {
     }
     console.log(preDeleteBook.rows[0]);
     await db.query(`INSERT INTO tempBooks (id, nombre) VALUES ($1, $2) RETURNING id, nombre`, [req.user.id, preDeleteBook.rows[0].titulo]);
-    const wtf = await db.query(`DELETE FROM Books WHERE id = $1`, [id]);
-    console.log(wtf);
+    await db.query(`DELETE FROM Books WHERE id = $1`, [id]);
     await db.query(`DELETE FROM tempBooks`);
     res.status(200).json({
         status: "success",

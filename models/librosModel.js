@@ -26,7 +26,8 @@ const booksTagsModel = `
 const tempTableBooks = `
     CREATE TABLE IF NOT EXISTS tempBooks(
         id UUID,
-        nombre text
+        nombre text,
+        user_rol text
     )
 `;
 
@@ -44,16 +45,20 @@ const auditoriaLibros = `
 const bookTriggerUpdateInsert = `
     CREATE OR REPLACE FUNCTION updateInsertBooks()
     RETURNS TRIGGER AS $$
+    DECLARE
+        rol_usuario_check text;
     BEGIN
-        IF TG_OP = 'INSERT' THEN
+        SELECT user_rol INTO rol_usuario_check FROM tempBooks;
+        IF TG_OP = 'INSERT' AND rol_usuario_check = 'Administrador' THEN
             INSERT INTO AuditoriaLibros(id_administrador, accion, nombre_libro) VALUES(NEW.id_administrador, 'Insert', NEW.titulo);
             RAISE NOTICE 'Operación insertar realizada en libros';
             RETURN NEW;
-        ELSIF TG_OP = 'UPDATE' THEN
+        ELSIF TG_OP = 'UPDATE' AND rol_usuario_check = 'Administrador' THEN
             INSERT INTO AuditoriaLibros(id_administrador, accion, nombre_libro) VALUES(NEW.id_administrador, 'Update', NEW.titulo);
             RAISE NOTICE 'Operación actualizar realizada en libros';
             RETURN NEW;
         END IF;
+        RETURN NEW;
     END;
     $$ LANGUAGE plpgsql;
 `;
