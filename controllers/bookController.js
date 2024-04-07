@@ -110,6 +110,9 @@ exports.getBooks = catchAsync(async (req, res, next) => {
                 stringFilter += stringTmp;
             }
         });
+        if(req.query.stockout == "false"){
+            stringFilter += `${bandString ? "AND" : ""} stock > 0`
+        }
         let stringQuery = `SELECT titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, image, editorial, id FROM Books ${stringFilter != "" ? "WHERE" : ""} ${stringFilter}`
         console.log(stringQuery, stringFilter);
         libro = await db.query(stringQuery);
@@ -120,6 +123,9 @@ exports.getBooks = catchAsync(async (req, res, next) => {
                 stringFilter += stringTmp;
             }
         });
+        if(req.query.stockout == "false"){
+            stringFilter += `AND b.stock > 0`
+        }
         console.log(stringFilter);
         libro = await db.query(`SELECT b.titulo, b.sinopsis, b.stock, b.edicion, b.autores, b.fecha_publicacion, b.paginas, b.image, b.editorial, b.id FROM BooksTags t JOIN Books b ON t.id_book = b.id WHERE t.id_tag = $1 ${stringFilter}`, [req.body.categoria]);
     }
