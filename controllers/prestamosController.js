@@ -135,9 +135,73 @@ exports.libroRecogidoPrestamo = catchAsync(async(req,res,next) => {
     await db.query(`INSERT INTO tempPrestamos (rol_usuario, nombre) VALUES ($1, $2)`, [req.user.rol, prestamo.rows[0].nombre]);
     await db.query(`UPDATE Prestamos SET estado = 'Recogido', id_administrador = $1, fecha_vencimiento = $2 WHERE id = $3`, [req.user.id, date.toDateString(), req.params.id]);
     await db.query(`DELETE FROM tempPrestamos`);
-    await new Email(prestamo.rows[0]).sendRecogidoPrestamo(checkStock.rows[0].titulo);
+    await new Email(prestamo.rows[0]).sendRecogidoPrestamo(req.body.bookName);
     res.status(200).json({
         status: "success",
         message: "Prestamo marcado como recogido con exito"
+    });
+})
+
+exports.libroNoDevuelto = catchAsync(async(req,res,next) => {
+    const prestamo = await db.query(`SELECT u.correo_electronico, u.nombre, p.estado FROM Prestamos p JOIN Usuarios u ON p.id_usuario = u.id WHERE p.id = $1`, [req.params.id]);
+    if(prestamo.rowCount < 1){
+        return next(new ApiErrors("El prestamo no existe", 400));
+    }
+    if(prestamo.rows[0].estado != "Recogido"){
+        return next(new ApiErrors("Hubo un error", 400));
+    }
+    const date = new Date();
+    date.setDate(date.getDate());
+    await db.query(`INSERT INTO tempPrestamos (rol_usuario, nombre) VALUES ($1, $2)`, [req.user.rol, prestamo.rows[0].nombre]);
+    await db.query(`UPDATE Prestamos SET estado = 'No Devuelto', id_administrador = $1, fecha_entrega = $2 WHERE id = $3`, [req.user.id, date.toDateString(), req.params.id]);
+    await db.query(`DELETE FROM tempPrestamos`);
+    await new Email(prestamo.rows[0]).sendNoDevueltoPrestamo(req.body.bookName);
+    res.status(200).json({
+        status: "success",
+        message: "Prestamo marcado como no recogido con exito"
+    });
+})
+
+exports.libroDevuelto = catchAsync(async(req,res,next) => {
+    const prestamo = await db.query(`SELECT u.correo_electronico, u.nombre, p.estado FROM Prestamos p JOIN Usuarios u ON p.id_usuario = u.id WHERE p.id = $1`, [req.params.id]);
+    if(prestamo.rowCount < 1){
+        return next(new ApiErrors("El prestamo no existe", 400));
+    }
+    if(prestamo.rows[0].estado != "Recogido"){
+        return next(new ApiErrors("No se pueden devolver libros que no se recogieron", 400));
+    }
+
+    const checkStock = await db.query(`SELECT stock, titulo FROM Books WHERE id = $1`, [req.body.bookId]);
+    await db.query(`INSERT INTO tempBooks (user_rol) VALUES ($1)`, [req.user.rol]);
+    await db.query(`UPDATE Books SET stock = $1, id_administrador = $2 WHERE id = $3`, [parseInt(checkStock.rows[0].stock)+1, req.user.id, req.body.bookId]);
+    await db.query(`DELETE FROM tempBooks`);
+
+    const date = new Date();
+    date.setDate(date.getDate());
+    await db.query(`INSERT INTO tempPrestamos (rol_usuario, nombre) VALUES ($1, $2)`, [req.user.rol, prestamo.rows[0].nombre]);
+    await db.query(`UPDATE Prestamos SET estado = 'Devuelto', id_administrador = $1, fecha_entrega = $2 WHERE id = $3`, [req.user.id, date.toDateString(), req.params.id]);
+    await db.query(`DELETE FROM tempPrestamos`);
+    await new Email(prestamo.rows[0]).sendDevueltoPrestamo(checkStock.rows[0].titulo);
+    res.status(200).json({
+        status: "success",
+        message: "Prestamo marcado como devuelto con exito"
+    });
+})
+
+exports.eliminarPrestamo = catchAsync(async(req,res,next) => {
+    const prestamo = await db.query(`SELECT u.correo_electronico, u.nombre, p.estado FROM Prestamos p JOIN Usuarios u ON p.id_usuario = u.id WHERE p.id = $1`, [req.params.id]);
+    if(prestamo.rowCount < 1){
+        return next(new ApiErrors("El prestamo no existe", 400));
+    }
+    if(prestamo.rows[0].estado == "Reservado" || prestamo.rows[0].estado == "Recogido" ){
+        return next(new ApiErrors("No se pueden eliminar prestamos activos", 400));
+    }
+
+    await db.query(`INSERT INTO tempPrestamos (rol_usuario, nombre, id) VALUES ($1, $2, $3)`, [req.user.rol, prestamo.rows[0].nombre, req.user.id]);
+    await db.query(`DELETE FROM Prestamos WHERE id = $1`, [req.params.id]);
+    await db.query(`DELETE FROM tempPrestamos`);
+    res.status(200).json({
+        status: "success",
+        message: "Prestamo eliminado con exito"
     });
 })

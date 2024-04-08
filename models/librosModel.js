@@ -73,6 +73,7 @@ const bookTriggerDelete = `
         SELECT nombre, id INTO nombre_book_select, id_book_tr FROM tempBooks;
         INSERT INTO AuditoriaLibros(id_administrador, accion, nombre_libro) VALUES(id_book_tr, 'Delete', nombre_book_select);
         DELETE FROM BooksTags WHERE id_book = OLD.id;
+        DELETE FROM Prestamos WHERE id_book = OLD.id;
         RAISE NOTICE 'Operación borrar realizada en libros';
         RETURN OLD;
     END;

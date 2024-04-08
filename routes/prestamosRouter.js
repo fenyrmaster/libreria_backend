@@ -13,6 +13,9 @@ prestamosRouter.route("/get-all-user").post(authController.protect, authControll
 prestamosRouter.route("/cancelar-pedido-user/:id").patch(authController.protect, prestamosController.cancelPrestamoOwner);
 prestamosRouter.route("/cancelar-pedido-admin/:id").patch(authController.protect, authController.restrict("Administrador"), prestamosController.cancelPrestamoAdmin);
 prestamosRouter.route("/pedido-recogido/:id").patch(authController.protect, authController.restrict("Administrador"), prestamosController.libroRecogidoPrestamo);
+prestamosRouter.route("/pedido-devuelto/:id").patch(authController.protect, authController.restrict("Administrador"), prestamosController.libroDevuelto);
+prestamosRouter.route("/pedido-no-devuelto/:id").patch(authController.protect, authController.restrict("Administrador"), prestamosController.libroNoDevuelto);
+prestamosRouter.route("/:id").delete(authController.protect, authController.restrict("Administrador"), prestamosController.eliminarPrestamo);
 
 //booksRouter
 //    .route("/:id")

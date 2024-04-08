@@ -80,6 +80,14 @@ module.exports = class Email {
         await this.send("prestamoRecogido", "Has recogido un libro", bookName);
     }
 
+    async sendNoDevueltoPrestamo(bookName){
+        await this.send("prestamoNoDevuelto", "No devolviste un libro", bookName);
+    }
+    
+    async sendDevueltoPrestamo(bookName){
+        await this.send("prestamoDevuelto", "Has devuelto un libro", bookName);
+    }
+
     async sendTarjeta(){
         await this.send("pedidoTarjeta", "Tu pedido ha sido registrado")
     }
