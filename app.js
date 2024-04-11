@@ -15,6 +15,7 @@ const userRouter = require("./routes/userRouter");
 const etiquetasRouter = require("./routes/etiquetasRouter");
 const bookRouter = require("./routes/booksRouter");
 const prestamosRouter = require("./routes/prestamosRouter");
+const auditoriaRouter = require("./routes/auditoriaRouter");
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use("/api/usuarios", userRouter);
 app.use("/api/etiquetas", etiquetasRouter);
 app.use("/api/libros", bookRouter);
 app.use("/api/prestamos", prestamosRouter);
+app.use("/api/auditorias", auditoriaRouter);
 
 app.all("*", (req,res,next) => {
   const err = new ApiErrors(`the given URL (${req.originalUrl}) is not valid`, 404);

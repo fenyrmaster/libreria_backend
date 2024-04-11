@@ -34,7 +34,6 @@ exports.registrarFotos = catchAsync(async(req,res,next) => {
         const err = new ApiErrors(`Tienes que agregar una imagen`, 404);
         return next(err);
     }
-    console.log(req.file);
     const imagenAvatar = `usuario-${req.user.nombre}-${Date.now()}-avatar`;
     await sharp(req.file.buffer).resize(600,600).toFormat("jpeg").jpeg({quality: 90}).toFile(`imagesTemp/usuarios/${imagenAvatar}`);
     await cloudinary.uploader.upload(`imagesTemp/usuarios/${imagenAvatar}`,{
@@ -52,7 +51,6 @@ exports.registrarFotos = catchAsync(async(req,res,next) => {
 
 exports.changeUserData = catchAsync(async (req,res,next) => {
     const { id } = req.params;
-    console.log(req.body);
     const { nombre, telefono, domicilio, localidad } = req.body
     const updatedUser = await db.query(`UPDATE Usuarios SET nombre = $1, domicilio = $2, localidad = $3, telefono = $4 WHERE id = $5 RETURNING nombre, localidad, telefono, correo_electronico, domicilio, rol, id, image`, [nombre, domicilio, localidad, telefono, id]);
     res.status(200).json({

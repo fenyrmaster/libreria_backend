@@ -54,7 +54,6 @@ exports.getPrestamos = catchAsync(async(req,res,next) => {
         stringFilter += ` ${bandString ? "AND" : ""} u.id = '${req.user.id}'`
     }
     let stringQuery = `SELECT p.id, p.fecha_entrega, p.fecha_vencimiento, u.nombre, u.localidad, u.telefono, u.correo_electronico, u.domicilio, u.rol, u.confirmado, u.id AS user_id, u.active, u.image, p.id_book, p.estado FROM Prestamos p JOIN Usuarios u ON p.id_usuario = u.id  ${stringFilter != "" ? "WHERE" : ""} ${stringFilter}`
-    console.log(stringQuery, stringFilter);
     prestamos = await db.query(stringQuery);
     await Promise.all(prestamos.rows.map(async prestamo => {
         let libro = await db.query(`SELECT titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, image, editorial, id FROM Books WHERE id = $1`, [prestamo.id_book])
@@ -62,7 +61,6 @@ exports.getPrestamos = catchAsync(async(req,res,next) => {
         let etiquetasAll = await addBookTags(prestamo.libro.id);
         prestamo.libro.etiquetas = etiquetasAll;
     }));
-    console.log(prestamos.rows);
     res.status(200).json({
         status: "success",
         prestamos: prestamos.rows

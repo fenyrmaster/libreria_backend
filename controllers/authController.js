@@ -107,7 +107,6 @@ exports.confirmIdentity = catchAsync(async (req,res,next) => {
         await db.query(`DELETE FROM Usuarios WHERE id = $1`, [user.rows[0].id]);
         return next(new ApiErrors("Has tardado mucho, crea una nueva cuenta", 410));
     }
-    console.log(user);
     await db.query(`UPDATE Usuarios SET confirmString = NULL, confirmStringExpiration = NULL, confirmado = TRUE WHERE id = $1`, [user.rows[0].id]);
     res.status(200).json({
         status: "success",
@@ -141,7 +140,6 @@ exports.login = catchAsync(async (req,res,next) => {
         return next(new ApiErrors("Contraseña incorrecta", 400));
     }
     points.points = 5;
-    console.log("estoy aqui")
     const token = signToken(user.rows[0].id);
     res.cookie("jwt", token, {
         maxAge: process.env.JWT_COOKIE_EXPIRES_IN*24*60*60*1000,
@@ -258,7 +256,6 @@ exports.forgotPass = catchAsync(async(req,res,next) => {
 });
 exports.resetPass = catchAsync(async(req,res,next) => {
     //usar template strings con el process.env
-    console.log(req.body)
     const hashedToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
     const user = await db.query(`SELECT passwordResetToken, id FROM Usuarios WHERE passwordResetToken = $1`, [hashedToken])
     if(user.rows.length < 1){
@@ -295,14 +292,12 @@ exports.remindUser = catchAsync(async (req,res,next) => {
     let token
     token = req.cookies.jwt;
     if(!req.cookies.jwt){
-        console.log("si hay token 2");
         token = req.query.jwt;
     }
     if(!token){
         return next(new ApiErrors("Wheres the token lowalski, WHERE IS THE GODAMN TOKEN", 401))
     }
     const decoded = await promisify(JWT.verify)(token,process.env.JWT_SECRET);
-    console.log("estoy aqui");
     const freshUser = await db.query(`SELECT nombre, id, localidad, telefono, correo_electronico, domicilio, rol, image FROM Usuarios WHERE id = $1`, [decoded.id]);
     if(!freshUser){
         return next(new ApiErrors("The user belonging to this token does no longer exist.", 401))
@@ -342,7 +337,6 @@ exports.requestEmailChange = catchAsync(async (req,res,next) => {
 })
 
 exports.mailChangeConfirm = catchAsync(async (req,res,next) => {
-    console.log(req.body);
     const hashedToken = crypto.createHash("sha256").update(req.body.emailChangeString).digest("hex");
     const checkUser = await db.query(`SELECT emailChangeString, id FROM Usuarios WHERE emailChangeString = $1`, [hashedToken]);
     if(checkUser.rows.length < 1){

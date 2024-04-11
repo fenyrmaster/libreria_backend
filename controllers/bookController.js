@@ -65,7 +65,6 @@ exports.registrarFotosUpdate = catchAsync(async(req,res,next) => {
     if(!req.file){
         return next();
     }
-    console.log(req.file);
     const imagenLibro = `libro-${req.body.titulo}-${Date.now()}-image`;
     await sharp(req.file.buffer).toFormat("jpeg").jpeg({quality: 90}).toFile(`imagesTemp/libros/${imagenLibro}`);
     await cloudinary.uploader.upload(`imagesTemp/libros/${imagenLibro}`,{
@@ -102,6 +101,7 @@ exports.getBooks = catchAsync(async (req, res, next) => {
     let stringTmp = "";
     let bandString = false;
     let libro;
+    (req.query?.name && req.query?.name != "") && (req.body.titulo = req.query.name)
     if(req.body.categoria == ""){
         Object.keys(req.body).forEach(function(key, idx, arr){
             if(req.body[key] != "" && key != "categoria"){
@@ -114,7 +114,6 @@ exports.getBooks = catchAsync(async (req, res, next) => {
             stringFilter += `${bandString ? "AND" : ""} stock > 0`
         }
         let stringQuery = `SELECT titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, image, editorial, id FROM Books ${stringFilter != "" ? "WHERE" : ""} ${stringFilter}`
-        console.log(stringQuery, stringFilter);
         libro = await db.query(stringQuery);
     } else{
         Object.keys(req.body).forEach(function(key, idx, arr){
@@ -126,7 +125,6 @@ exports.getBooks = catchAsync(async (req, res, next) => {
         if(req.query.stockout == "false"){
             stringFilter += `AND b.stock > 0`
         }
-        console.log(stringFilter);
         libro = await db.query(`SELECT b.titulo, b.sinopsis, b.stock, b.edicion, b.autores, b.fecha_publicacion, b.paginas, b.image, b.editorial, b.id FROM BooksTags t JOIN Books b ON t.id_book = b.id WHERE t.id_tag = $1 ${stringFilter}`, [req.body.categoria]);
     }
     const bookAll = [];
@@ -134,7 +132,6 @@ exports.getBooks = catchAsync(async (req, res, next) => {
         let etiquetasAll = await addBookTags(libroInd.id);
         libroInd.etiquetas = etiquetasAll;
         bookAll.push(libroInd);
-        //console.log(bookAll)
     }));
     res.status(200).json({
         status: "success",
@@ -173,7 +170,6 @@ exports.deleteBooks = catchAsync(async (req, res, next) => {
     if(preDeleteBook.rowCount < 1){
         return next(new ApiErrors("El libro no existe", 400));
     }
-    console.log(preDeleteBook.rows[0]);
     await db.query(`INSERT INTO tempBooks (id, nombre) VALUES ($1, $2) RETURNING id, nombre`, [req.user.id, preDeleteBook.rows[0].titulo]);
     await db.query(`DELETE FROM Books WHERE id = $1`, [id]);
     await db.query(`DELETE FROM tempBooks`);
