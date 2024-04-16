@@ -38,6 +38,7 @@ const limiter = rateLimit({
 app.use("/api", limiter);
 
 app.use(express.json({limit: "20kb"}));
+app.enable("trust proxy");
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(xss());
