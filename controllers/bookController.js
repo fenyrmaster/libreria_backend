@@ -145,13 +145,13 @@ exports.updateBooks = catchAsync(async (req, res, next) => {
     if(titulo == "" || sinopsis == "" || stock <= -1 || edicion == "" || editorial == "" || autores == "" || fecha_publicacion == "" || paginas <= -1){
         return next(new ApiErrors("Todos los campos son obligatorios y los valores numericos no pueden ser negativos", 400));
     }
+    await db.query(`INSERT INTO tempBooks (user_rol) VALUES ($1)`, [req.user.rol]);
     let respuesta;
     if(req.body.imageURL){
         respuesta = await db.query(`UPDATE Books SET titulo = $1, sinopsis = $2, stock = $3, edicion = $4, autores = $5, fecha_publicacion = $6, paginas = $7, image = $8, id_administrador = $9, editorial = $10 WHERE id = $11 RETURNING id`, [titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, req.body.imageURL, req.user.id, editorial, id])
     } else {
         respuesta = await db.query(`UPDATE Books SET titulo = $1, sinopsis = $2, stock = $3, edicion = $4, autores = $5, fecha_publicacion = $6, paginas = $7, id_administrador = $8, editorial = $9 WHERE id = $10 RETURNING id`, [titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, req.user.id, editorial, id])
     }
-    await db.query(`INSERT INTO tempBooks (user_rol) VALUES ($1)`, [req.user.rol]);
     await db.query(`DELETE FROM BooksTags WHERE id_book = $1`, [respuesta.rows[0].id]);
     await db.query(`DELETE FROM tempBooks`);
     let parsedEtiquetas = etiquetas.split(",");
