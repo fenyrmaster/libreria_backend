@@ -63,7 +63,7 @@ exports.signup = catchAsync(async (req,res,next) => {
         return next(new ApiErrors("El correo colocado ya esta en uso", 400));
     }
 
-    const queryCreate = `INSERT INTO Usuarios (nombre, localidad, contrasena, telefono, correo_electronico, domicilio, rol) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING nombre, localidad, telefono, correo_electronico, domicilio, rol, id`;
+    const queryCreate = `INSERT INTO Usuarios (nombre, localidad, contrasena, telefono, correo_electronico, domicilio, rol) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING nombre, localidad, telefono, correo_electronico, domicilio, rol, id, active`;
     const newUser = await db.query(queryCreate, [ nombre, localidad, hashedPasswd, telefono, correo_electronico, domicilio, "Cliente" ]);
 
     const token = signToken(newUser.rows[0].id);
@@ -91,7 +91,8 @@ exports.signup = catchAsync(async (req,res,next) => {
                 rol: newUser.rows[0].rol,
                 domicilio: newUser.rows[0].domicilio,
                 telefono: newUser.rows[0].telefono,
-                image: newUser.rows[0].image
+                image: newUser.rows[0].image,
+                active: newUser.rows[0].active
             }
         }
     })
@@ -121,9 +122,12 @@ exports.login = catchAsync(async (req,res,next) => {
         }
     }
     const {correo_electronico, contrasena} = req.body;
-    const user = await db.query(`SELECT nombre, contrasena, id, localidad, telefono, correo_electronico, domicilio, rol, image FROM Usuarios WHERE correo_electronico = $1`, [correo_electronico]);
+    const user = await db.query(`SELECT nombre, contrasena, id, localidad, telefono, correo_electronico, domicilio, rol, image, active FROM Usuarios WHERE correo_electronico = $1`, [correo_electronico]);
     if(!correo_electronico || !contrasena){
         return next(new ApiErrors("La contraseña y correo son obligatorios", 400));
+    }
+    if(!user.rows[0]){
+        return next(new ApiErrors("El usuario con el correo electronico especificado no existe", 400));
     }
     if(!user.rows[0] || !(await bcrypt.compare(contrasena, user.rows[0].contrasena))) {
         points.points = points.points - 1;
@@ -190,7 +194,7 @@ exports.protect = catchAsync(async (req,res,next) => {
         return next(new ApiErrors("Wheres the token lowalski, WHERE IS THE GODAMN TOKEN", 401))
     }
     const decoded = await promisify(JWT.verify)(token,process.env.JWT_SECRET);
-    const freshUser = await db.query(`SELECT nombre, localidad, telefono, correo_electronico, domicilio, rol, confirmado, id FROM Usuarios WHERE id = $1`, [decoded.id]);
+    const freshUser = await db.query(`SELECT nombre, active, localidad, telefono, correo_electronico, domicilio, rol, confirmado, id FROM Usuarios WHERE id = $1`, [decoded.id]);
     if(freshUser.rows.length < 1){
         return next(new ApiErrors("El usuario no existe", 401))
     }
@@ -298,7 +302,7 @@ exports.remindUser = catchAsync(async (req,res,next) => {
         return next(new ApiErrors("Wheres the token lowalski, WHERE IS THE GODAMN TOKEN", 401))
     }
     const decoded = await promisify(JWT.verify)(token,process.env.JWT_SECRET);
-    const freshUser = await db.query(`SELECT nombre, id, localidad, telefono, correo_electronico, domicilio, rol, image FROM Usuarios WHERE id = $1`, [decoded.id]);
+    const freshUser = await db.query(`SELECT nombre, id, localidad, telefono, correo_electronico, domicilio, rol, image, active FROM Usuarios WHERE id = $1`, [decoded.id]);
     if(!freshUser){
         return next(new ApiErrors("The user belonging to this token does no longer exist.", 401))
     }

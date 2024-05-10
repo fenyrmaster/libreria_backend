@@ -75,7 +75,7 @@ exports.getUsers = catchAsync(async (req,res,next) => {
     let stringTmp = "";
     Object.keys(req.body).forEach(function(key, idx, arr){
         if(req.body[key] != ""){
-            stringTmp = ` AND ${key} LIKE '%${req.body[key]}%' `;
+            stringTmp = ` AND ${key} ILIKE '%${req.body[key]}%' `;
             stringFilter += stringTmp;
         }
     });

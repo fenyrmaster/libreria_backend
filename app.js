@@ -31,7 +31,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 const limiter = rateLimit({
-  max: 250,
+  max: 750,
   windowMs: 60*60*1000,
   message: "Vuelve a intentarlo mas tarde"
 });
