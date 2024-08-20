@@ -60,7 +60,7 @@ exports.getPrestamos = catchAsync(async(req,res,next) => {
     let stringQuery = `SELECT p.id, p.fecha_entrega, p.fecha_vencimiento, u.nombre, u.localidad, u.telefono, u.correo_electronico, u.domicilio, u.rol, u.confirmado, u.id AS user_id, u.active, u.image, p.id_book, p.estado FROM Prestamos p JOIN Usuarios u ON p.id_usuario = u.id  ${stringFilter != "" ? "WHERE" : ""} ${stringFilter}`
     prestamos = await db.query(stringQuery);
     await Promise.all(prestamos.rows.map(async prestamo => {
-        let libro = await db.query(`SELECT titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, image, editorial, id FROM Books WHERE id = $1`, [prestamo.id_book])
+        let libro = await db.query(`SELECT titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, image, editorial, id, oferta_inicio, oferta_fin, descuento, precio FROM Books WHERE id = $1`, [prestamo.id_book])
         prestamo.libro = libro.rows[0];
         let etiquetasAll = await addBookTags(prestamo.libro.id);
         prestamo.libro.etiquetas = etiquetasAll;

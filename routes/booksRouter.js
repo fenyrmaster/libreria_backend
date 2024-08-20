@@ -15,4 +15,6 @@ booksRouter
     .patch(authController.protect, authController.restrict("Administrador"), bookController.uploadBookImage, bookController.registrarFotosUpdate, bookController.updateBooks)
     .delete(authController.protect, authController.restrict("Administrador"), bookController.deleteBooks);
 
+booksRouter.route("/modificarDescuento/:id").patch(authController.protect, authController.restrict("Administrador"), bookController.discountBook);
+
 module.exports = booksRouter;

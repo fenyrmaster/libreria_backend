@@ -79,12 +79,12 @@ exports.registrarFotosUpdate = catchAsync(async(req,res,next) => {
 });
 
 exports.insertBook = catchAsync(async (req, res, next) => {
-    const { titulo, etiquetas, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, editorial, imageURL } = req.body;
+    const { titulo, etiquetas, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, editorial, imageURL, precio } = req.body;
     if(titulo == "" || sinopsis == "" || stock <= -1 || edicion == "" || editorial == "" || autores == "" || fecha_publicacion == "" || paginas <= -1 || !imageURL){
         return next(new ApiErrors("Todos los campos son obligatorios y los valores numericos no pueden ser negativos", 400));
     }
     await db.query(`INSERT INTO tempBooks (user_rol) VALUES ($1)`, [req.user.rol]);
-    const bookID = await db.query(`INSERT INTO Books (titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, image, id_administrador, editorial) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`, [titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, imageURL, req.user.id, editorial]);
+    const bookID = await db.query(`INSERT INTO Books (titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, image, id_administrador, editorial, precio) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`, [titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, imageURL, req.user.id, editorial, precio]);
     await db.query(`DELETE FROM tempBooks`);
     let parsedEtiquetas = etiquetas.split(",");
     parsedEtiquetas.forEach(etiquetaID => {
@@ -113,7 +113,7 @@ exports.getBooks = catchAsync(async (req, res, next) => {
         if(req.query.stockout == "false"){
             stringFilter += `${bandString ? "AND" : ""} stock > 0`
         }
-        let stringQuery = `SELECT titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, image, editorial, id FROM Books ${stringFilter != "" ? "WHERE" : ""} ${stringFilter}`
+        let stringQuery = `SELECT titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, image, editorial, id, oferta_inicio, oferta_fin, descuento, precio FROM Books ${stringFilter != "" ? "WHERE" : ""} ${stringFilter}`
         libro = await db.query(stringQuery);
     } else{
         Object.keys(req.body).forEach(function(key, idx, arr){
@@ -125,7 +125,7 @@ exports.getBooks = catchAsync(async (req, res, next) => {
         if(req.query.stockout == "false"){
             stringFilter += `AND b.stock > 0`
         }
-        libro = await db.query(`SELECT b.titulo, b.sinopsis, b.stock, b.edicion, b.autores, b.fecha_publicacion, b.paginas, b.image, b.editorial, b.id FROM BooksTags t JOIN Books b ON t.id_book = b.id WHERE t.id_tag = $1 ${stringFilter}`, [req.body.categoria]);
+        libro = await db.query(`SELECT b.titulo, b.sinopsis, b.stock, b.edicion, b.autores, b.fecha_publicacion, b.paginas, b.image, b.editorial, b.id, b.oferta_inicio, b.oferta_fin, b.descuento, b.precio FROM BooksTags t JOIN Books b ON t.id_book = b.id WHERE t.id_tag = $1 ${stringFilter}`, [req.body.categoria]);
     }
     const bookAll = [];
     await Promise.all(libro.rows.map(async libroInd => {
@@ -141,16 +141,16 @@ exports.getBooks = catchAsync(async (req, res, next) => {
 
 exports.updateBooks = catchAsync(async (req, res, next) => {
     const { id } = req.params;
-    const { titulo, etiquetas, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, editorial } = req.body;
+    const { titulo, etiquetas, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, editorial, precio } = req.body;
     if(titulo == "" || sinopsis == "" || stock <= -1 || edicion == "" || editorial == "" || autores == "" || fecha_publicacion == "" || paginas <= -1){
         return next(new ApiErrors("Todos los campos son obligatorios y los valores numericos no pueden ser negativos", 400));
     }
     await db.query(`INSERT INTO tempBooks (user_rol) VALUES ($1)`, [req.user.rol]);
     let respuesta;
     if(req.body.imageURL){
-        respuesta = await db.query(`UPDATE Books SET titulo = $1, sinopsis = $2, stock = $3, edicion = $4, autores = $5, fecha_publicacion = $6, paginas = $7, image = $8, id_administrador = $9, editorial = $10 WHERE id = $11 RETURNING id`, [titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, req.body.imageURL, req.user.id, editorial, id])
+        respuesta = await db.query(`UPDATE Books SET titulo = $1, sinopsis = $2, stock = $3, edicion = $4, autores = $5, fecha_publicacion = $6, paginas = $7, image = $8, id_administrador = $9, editorial = $10, precio = $11 WHERE id = $12 RETURNING id`, [titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, req.body.imageURL, req.user.id, editorial, precio, id])
     } else {
-        respuesta = await db.query(`UPDATE Books SET titulo = $1, sinopsis = $2, stock = $3, edicion = $4, autores = $5, fecha_publicacion = $6, paginas = $7, id_administrador = $8, editorial = $9 WHERE id = $10 RETURNING id`, [titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, req.user.id, editorial, id])
+        respuesta = await db.query(`UPDATE Books SET titulo = $1, sinopsis = $2, stock = $3, edicion = $4, autores = $5, fecha_publicacion = $6, paginas = $7, id_administrador = $8, editorial = $9, precio = $10 WHERE id = $11 RETURNING id`, [titulo, sinopsis, stock, edicion, autores, fecha_publicacion, paginas, req.user.id, editorial, precio, id])
     }
     await db.query(`DELETE FROM BooksTags WHERE id_book = $1`, [respuesta.rows[0].id]);
     await db.query(`DELETE FROM tempBooks`);
@@ -163,6 +163,19 @@ exports.updateBooks = catchAsync(async (req, res, next) => {
         message: "Libro modificado con exito"
     });
 });
+
+exports.discountBook = catchAsync(async (req, res, next) => {
+    const { id } = req.params;
+    const { oferta_inicio, oferta_fin, descuento } = req.body;
+    if(oferta_fin == "" || oferta_inicio == "" || descuento < 0 || descuento > 100){
+        return next(new ApiErrors("Todos los campos son obligatorios y los valores numericos no pueden ser negativos", 400));
+    }
+    let respuesta = await db.query(`UPDATE Books SET oferta_inicio = $1, oferta_fin = $2, descuento = $3 WHERE id = $4`, [oferta_inicio, oferta_fin, descuento, id]);
+    res.status(200).json({
+        status: "success",
+        message: "Oferta aplicada con exito"
+    });
+})
 
 exports.deleteBooks = catchAsync(async (req, res, next) => {
     const { id } = req.params;

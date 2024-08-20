@@ -10,7 +10,11 @@ const createBooksModel = `
         autores text NOT NULL,
         fecha_publicacion DATE NOT NULL DEFAULT CURRENT_DATE,
         paginas INTEGER NOT NULL,
-        image text NOT NULL
+        image text NOT NULL,
+        precio real NOT NULL DEFAULT 599.99,
+        oferta_inicio date NOT NULL DEFAULT '2000-01-01'::date,
+        oferta_fin date NOT NULL DEFAULT '2000-01-01'::date,
+        descuento smallint NOT NULL DEFAULT 0 CHECK (descuento BETWEEN 0 AND 100)
     )
 `;
 
