@@ -4,6 +4,7 @@ const db = require("../db");
 const cloudinary = require("cloudinary").v2;
 const multer = require("multer");
 const sharp = require("sharp");
+const stripe = require('stripe')('sk_test_51Pr3OtKwX3FDsLtri2DOG1oHjYLLF6n4VBriJEz8cPvZX2I6XtjxoMcgtbKGcQi56sg4dQB775v83rrh7CrAgwFi00sSXFBXx6');
 
 const multerStorage = multer.memoryStorage();
 
@@ -170,7 +171,7 @@ exports.discountBook = catchAsync(async (req, res, next) => {
     if(oferta_fin == "" || oferta_inicio == "" || descuento < 0 || descuento > 100){
         return next(new ApiErrors("Todos los campos son obligatorios y los valores numericos no pueden ser negativos", 400));
     }
-    let respuesta = await db.query(`UPDATE Books SET oferta_inicio = $1, oferta_fin = $2, descuento = $3 WHERE id = $4`, [oferta_inicio, oferta_fin, descuento, id]);
+    await db.query(`UPDATE Books SET oferta_inicio = $1, oferta_fin = $2, descuento = $3 WHERE id = $4`, [oferta_inicio, oferta_fin, descuento, id]);
     res.status(200).json({
         status: "success",
         message: "Oferta aplicada con exito"
@@ -189,5 +190,83 @@ exports.deleteBooks = catchAsync(async (req, res, next) => {
     res.status(200).json({
         status: "success",
         message: "Libro eliminado con exito"
+    })
+});
+
+exports.comprarLibroSession = catchAsync(async (req, res, next) => {
+    const book = await db.query(`SELECT titulo, sinopsis, stock, image, oferta_inicio, oferta_fin, descuento, precio FROM Books WHERE id = $1`, [req.body.id]);
+    const { titulo, sinopsis, stock, image, oferta_inicio, oferta_fin, descuento, precio } = book.rows[0];
+
+    // Validar que el libro exista
+    if(book.rowCount <= 0){
+        return next(new ApiErrors("El libro no existe", 400));
+    }
+
+    // Verificar que el stock sea suficiente
+    if(stock < req.body.cantidad){
+        return next(new ApiErrors("No hay suficiente cantidad de libros para tu compra", 400));
+    }
+
+    let descuentoTotal;
+    const currentDate = new Date().getTime();
+    const startDate = new Date(oferta_inicio);
+    const endDate = new Date(oferta_fin);
+    (currentDate > startDate  && currentDate < endDate) ? descuentoTotal = ((precio*(100-descuento))/100).toFixed(3) : descuentoTotal = precio; 
+    let libro = {
+        price_data: {
+            currency: 'mxn',
+            unit_amount:Math.floor(descuentoTotal)*100,
+            product_data: {
+                name: titulo,
+                description: sinopsis,
+                images: [image],
+            }
+        },
+        quantity: req.body.cantidad
+    }
+    const session = await stripe.checkout.sessions.create({
+        line_items: [libro],
+        payment_method_types: ["card"],
+        success_url: `${process.env.URL_FRONT}/crearPedido/id_book=${req.body.id}&cantidad=${req.body.cantidad}&precio=${descuentoTotal}&id_user=${req.user._id}`,
+        cancel_url: `${process.env.URL_FRONT}/carrito?cancelado=true`,
+        customer_email: req.user.email,
+        client_reference_id: req.user._id,
+        submit_type: 'pay',
+        mode: 'payment'
+    });
+    res.status(200).json({
+        status: "success",
+        url: session.url
+    })
+});
+
+exports.comprarLibroEfectivo = catchAsync(async (req, res, next) => {
+    const book = await db.query(`SELECT stock, oferta_inicio, oferta_fin, descuento, precio FROM Books WHERE id = $1`, [req.body.id]);
+    const { stock, precio, descuento, oferta_fin, oferta_inicio } = book.rows[0];
+
+    let descuentoTotal;
+    const currentDate = new Date().getTime();
+    const startDate = new Date(oferta_inicio);
+    const endDate = new Date(oferta_fin);
+    (currentDate > startDate  && currentDate < endDate) ? descuentoTotal = ((precio*(100-descuento))/100).toFixed(3) : descuentoTotal = precio;
+
+    // Validar que el libro exista
+    if(book.rowCount <= 0){
+        return next(new ApiErrors("El libro no existe", 400));
+    }
+
+    // Verificar que el stock sea suficiente
+    if(stock < req.body.cantidad){
+        return next(new ApiErrors("No hay suficiente cantidad de libros para tu compra", 400));
+    }
+
+    const date = new Date();
+    date.setDate(date.getDate()+7);
+
+    await db.query(`UPDATE Books SET stock=$1 WHERE id=$2`, [stock-req.body.cantidad, req.body.id]);
+    await db.query(`INSERT INTO Compras (fecha_entrega, precio, pagado, id_usuario, id_book, estado) VALUES ($1, $2, $3, $4, $5, $6)`, [date, descuentoTotal, 'false', req.user.id, req.body.id, 'Reservado']);
+    res.status(200).json({
+        status: "success",
+        message: "Orden creada con exito, visita la libreria para pagar la orden"
     })
 });

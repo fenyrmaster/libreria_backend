@@ -3,7 +3,7 @@ const { createUserTable, rolesType, fix, uuidextension } = require("../models/us
 const { categoriaType, accionType, auditoriaEtiquetas, createCategoriasModel, triggerUpdateInsertOptions, triggerUpdateInsert, tempTableEtiquetas, triggerDeleteOptions, triggerDelete } = require("../models/categoriasModel");
 const { createBooksModel, tempTableBooks, auditoriaLibros, booksTagsModel, bookTriggerDelete, bookTriggerUpdateInsert, bookTriggerDeleteOptions, bookTriggerUpdateInsertOptions } = require("../models/librosModel");
 const { estadoType, createPrestamoModel, tempTablePrestamos, auditoriaPrestamos, prestamoTriggerUpdateInsert, prestamoTriggerDelete, prestamoTriggerUpdateInsertOptions, prestamoTriggerDeleteOptions } = require("../models/prestamosModel");
-
+const { createPagoModel, estadoPagosType } = require("../models/comprasModel");
 
 const runMigrations = async () => {
     console.log("BEGIN DB MIGRATION");
@@ -11,6 +11,7 @@ const runMigrations = async () => {
     const client = await db.connect();
 
     try{
+        // Creacion de tablas y enums
         await client.query("BEGIN");
         await client.query(uuidextension);
         await client.query(rolesType);
@@ -28,6 +29,9 @@ const runMigrations = async () => {
         await client.query(auditoriaLibros);
         await client.query(auditoriaPrestamos);
         await client.query(booksTagsModel);
+        await client.query(estadoPagosType);
+        await client.query(createBooksModel);
+        await client.query(createPagoModel);
         
         // Triggers
         await client.query(triggerDelete);

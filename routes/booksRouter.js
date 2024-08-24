@@ -16,5 +16,7 @@ booksRouter
     .delete(authController.protect, authController.restrict("Administrador"), bookController.deleteBooks);
 
 booksRouter.route("/modificarDescuento/:id").patch(authController.protect, authController.restrict("Administrador"), bookController.discountBook);
+booksRouter.route("/comprarLibro").post(authController.protect, authController.restrict("Cliente"), bookController.comprarLibroSession);
+booksRouter.route("/comprarLibroEfectivo").post(authController.protect, authController.restrict("Cliente"), bookController.comprarLibroEfectivo);
 
 module.exports = booksRouter;

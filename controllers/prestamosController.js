@@ -11,9 +11,9 @@ const addBookTags = async bookID => {
 
 exports.createPrestamo = catchAsync(async(req,res,next) => {
     const { bookId } = req.body
-    const checkIfAlredyHas = await db.query(`SELECT id, id_usuario FROM Prestamos WHERE id_book = $1 AND estado IN ('Reservado', 'Recogido', 'No Devuelto')`, [bookId]);
+    const checkIfAlredyHas = await db.query(`SELECT id, id_usuario FROM Prestamos WHERE id_book = $1 AND estado IN ('Reservado', 'Recogido', 'No Devuelto') AND id_usuario = $2`, [bookId, req.user.id]);
     const checkStock = await db.query(`SELECT stock, titulo FROM Books WHERE id = $1`, [bookId]);
-    console.log(req.user)
+    console.log(checkIfAlredyHas)
     if(!req.user.active){
         return next(new ApiErrors("Tu cuenta esta desactivada, contactate con la libreria", 401));
     }
