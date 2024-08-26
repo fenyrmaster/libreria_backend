@@ -2,7 +2,6 @@ const catchAsync = require("../utils/catchAsync");
 const ApiErrors = require("../utils/appError");
 const Email = require("../utils/email");
 const db = require("../db");
-const e = require("express");
 
 const addBookTags = async bookID => {
     const tags = await db.query(`SELECT t.nombre, t.tipo, t.id FROM BooksTags b JOIN Etiquetas t ON b.id_tag = t.id  WHERE id_book = $1 `, [bookID]);

@@ -8,6 +8,7 @@ const createPagoModel = `
         id_usuario UUID NOT NULL,
         id_book UUID NOT NULL,
         estado ESTADOSPAGOS NOT NULL DEFAULT 'Reservado',
+        cantidad INTEGER NOT NULL DEFAULT 1,
         FOREIGN KEY (id_book) REFERENCES Books(id),
         FOREIGN KEY (id_usuario) REFERENCES Usuarios(id)
     )

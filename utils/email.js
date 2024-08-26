@@ -91,4 +91,15 @@ module.exports = class Email {
     async sendTarjeta(){
         await this.send("pedidoTarjeta", "Tu pedido ha sido registrado")
     }
+
+    async sendCompraCanceladoAdmin(bookName){
+        await this.send("compraCanceladoAdmin", "Se cancelo una compra sin completar", bookName);
+    }
+    async sendCompraCompletadoAdmin(bookName){
+        await this.send("compraCompletadoAdmin", "Se completo una compra", bookName);
+    }
+
+    async sendCanceladoUserCompra(bookName){
+        await this.send("compraCanceladoUser", "Has cancelado una compra", bookName);
+    }
 }

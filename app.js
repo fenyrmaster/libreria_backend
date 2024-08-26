@@ -16,6 +16,7 @@ const etiquetasRouter = require("./routes/etiquetasRouter");
 const bookRouter = require("./routes/booksRouter");
 const prestamosRouter = require("./routes/prestamosRouter");
 const auditoriaRouter = require("./routes/auditoriaRouter");
+const comprasRouter = require("./routes/comprasRouter");
 
 const app = express();
 
@@ -38,7 +39,6 @@ const limiter = rateLimit({
 app.use("/api", limiter);
 
 app.use(express.json({limit: "100kb"}));
-app.enable("trust proxy");
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(xss());
@@ -48,6 +48,7 @@ app.use("/api/usuarios", userRouter);
 app.use("/api/etiquetas", etiquetasRouter);
 app.use("/api/libros", bookRouter);
 app.use("/api/prestamos", prestamosRouter);
+app.use("/api/compras", comprasRouter);
 app.use("/api/auditorias", auditoriaRouter);
 
 app.all("*", (req,res,next) => {

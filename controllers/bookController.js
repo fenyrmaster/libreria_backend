@@ -4,7 +4,7 @@ const db = require("../db");
 const cloudinary = require("cloudinary").v2;
 const multer = require("multer");
 const sharp = require("sharp");
-const stripe = require('stripe')('sk_test_51Pr3OtKwX3FDsLtri2DOG1oHjYLLF6n4VBriJEz8cPvZX2I6XtjxoMcgtbKGcQi56sg4dQB775v83rrh7CrAgwFi00sSXFBXx6');
+const stripe = require('stripe')(process.env.STRIPE_SECRET);
 
 const multerStorage = multer.memoryStorage();
 
@@ -264,7 +264,7 @@ exports.comprarLibroEfectivo = catchAsync(async (req, res, next) => {
     date.setDate(date.getDate()+7);
 
     await db.query(`UPDATE Books SET stock=$1 WHERE id=$2`, [stock-req.body.cantidad, req.body.id]);
-    await db.query(`INSERT INTO Compras (fecha_entrega, precio, pagado, id_usuario, id_book, estado) VALUES ($1, $2, $3, $4, $5, $6)`, [date, descuentoTotal, 'false', req.user.id, req.body.id, 'Reservado']);
+    await db.query(`INSERT INTO Compras (fecha_entrega, precio, pagado, id_usuario, id_book, estado, cantidad) VALUES ($1, $2, $3, $4, $5, $6, $7)`, [date, descuentoTotal, 'false', req.user.id, req.body.id, 'Reservado', req.body.cantidad]);
     res.status(200).json({
         status: "success",
         message: "Orden creada con exito, visita la libreria para pagar la orden"
